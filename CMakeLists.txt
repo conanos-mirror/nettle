@@ -38,7 +38,18 @@ if(MSVC)
    else()
  
    endif()
-   
+   add_definitions(/wd4018)
+   add_definitions(/wd4273)
+   add_definitions(/wd4090)
+   add_definitions(/wd4013)
+   add_definitions(/wd4244)
+   add_definitions(/wd4311)
+   add_definitions(/wd4267)
+   add_definitions(/wd5999)
+   add_definitions(/wd4146)
+   add_definitions(/wd4819)
+   add_definitions(/wd4101)
+   add_definitions(/wd4334)
 endif()
 
 
@@ -53,9 +64,24 @@ include_directories(${NETTLE_PROJECT_DIR}
 					${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/${__arch__}                    
                     ${CMAKE_CURRENT_BINARY_DIR}
 					)
-
+#if(BUILD_SHARED_LIBS)
+#  set(LIBNETTLE_DLL 1)
+#  set(LIBHOGWEED_DLL 1)
+#else()
+#  set(LIBNETTLE_DLL 0)
+#  set(LIBHOGWEED_DLL 0)
+#endif()
+#message("-------------------------------------------------------")
+#message("${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/ecc-curve.h.in")
+#message("${NETTLE_PROJECT_DIR}/ecc-curve.h")
+#message("-------------------------------------------------------")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/config.h.cmakein
                ${CMAKE_CURRENT_BINARY_DIR}/config.h @ONLY)
+
+#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/ecc-curve.h.in
+#               ${NETTLE_PROJECT_DIR}/ecc-curve.h @ONLY)
+#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/nettle-meta.h.in
+#               ${NETTLE_PROJECT_DIR}/nettle-meta.h @ONLY)
 
 set(HEADERS_ aes.h arcfour.h arctwo.h asn1.h blowfish.h 
 	  base16.h base64.h bignum.h buffer.h camellia.h cast128.h 
@@ -209,16 +235,23 @@ set(full_nettle_sources)
 foreach(name ${nettle_SOURCES})
   set(full_nettle_sources ${full_nettle_sources} ${NETTLE_PROJECT_DIR}/${name})
 endforeach()
-add_library(nettle  ${full_nettle_sources} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/libnettle.def)
-target_link_libraries(nettle gmp)
+add_library(nettle  STATIC ${full_nettle_sources})# ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/libnettle.def)
+target_compile_definitions(nettle PRIVATE LIBNETTLE_BUILDING)
+#if(BUILD_SHARED_LIBS)
+#	target_link_libraries(nettle gmp)
+#endif()
 assign_source_group(${full_nettle_sources})
 
 set(full_hogweed_sources)
 foreach(name ${hogweed_SOURCES})
   set(full_hogweed_sources ${full_hogweed_sources} ${NETTLE_PROJECT_DIR}/${name})
 endforeach()
-add_library(hogweed ${full_hogweed_sources} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/libhogweed.def)
-target_link_libraries(hogweed nettle gmp)
+add_library(hogweed STATIC ${full_hogweed_sources})# ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/libhogweed.def)
+target_compile_definitions(hogweed PRIVATE LIBHOGWEED_BUILDING)
+#if(BUILD_SHARED_LIBS)#
+#	target_link_libraries(hogweed nettle gmp)
+#endif()
+
 assign_source_group(${full_hogweed_sources})
 
 install(FILES ${INSTALL_HEADERS} DESTINATION include/nettle)
@@ -230,49 +263,51 @@ INSTALL(TARGETS nettle hogweed
 if(ENABLE_UNIT_TESTS )
 enable_testing()
 
-set(TS_NETTLE  aes-test arcfour-test arctwo-test 
-		    blowfish-test cast128-test 
-	        base16-test base64-test 
-		    camellia-test chacha-test 
-		    des-test des3-test des-compat-test 
-		    md2-test md4-test md5-test md5-compat-test 
-		    memeql-test memxor-test gosthash94-test 
-		    ripemd160-test hkdf-test 
-		    salsa20-test 
-		    sha1-test sha224-test sha256-test 
-		    sha384-test sha512-test sha512-224-test sha512-256-test 
-		    sha3-permute-test sha3-224-test sha3-256-test 
-		    sha3-384-test sha3-512-test 
-		    serpent-test twofish-test version-test 
-		    knuth-lfib-test 
-		    cbc-test cfb-test ctr-test gcm-test eax-test ccm-test 
-		    poly1305-test chacha-poly1305-test 
-		    hmac-test umac-test 
-		    meta-hash-test meta-cipher-test
-		    meta-aead-test meta-armor-test 
-		    buffer-test 
-			#yarrow-test 
-			#pbkdf2-test 
-			pss-mgf1-test)
+set(TS_NETTLE
+     aes-test arcfour-test arctwo-test 
+	 blowfish-test cast128-test 
+	 base16-test base64-test 
+	 camellia-test chacha-test 
+	 des-test des3-test des-compat-test 
+	 md2-test md4-test md5-test md5-compat-test 
+	 memeql-test memxor-test gosthash94-test 
+	 ripemd160-test hkdf-test 
+	 salsa20-test 
+	 sha1-test sha224-test sha256-test 
+	 sha384-test sha512-test sha512-224-test sha512-256-test 
+	 sha3-permute-test sha3-224-test sha3-256-test 
+	 sha3-384-test sha3-512-test 
+	 serpent-test twofish-test version-test 
+	 knuth-lfib-test 
+	 cbc-test cfb-test ctr-test gcm-test eax-test ccm-test 
+	 poly1305-test chacha-poly1305-test 
+	 hmac-test umac-test 
+	 meta-hash-test meta-cipher-test
+	 meta-aead-test meta-armor-test 
+	 buffer-test 
+	#yarrow-test 
+	#pbkdf2-test 
+	pss-mgf1-test)
 
-set(TS_HOGWEED sexp-test sexp-format-test 
-		     rsa2sexp-test sexp2rsa-test 
-		     bignum-test random-prime-test 
-		     pkcs1-test pss-test rsa-sign-tr-test 
-		     rsa-pss-sign-tr-test 
-		     rsa-test rsa-encrypt-test rsa-keygen-test 
-		     dsa-test dsa-keygen-test 
-		     curve25519-dh-test 
-		     #ecc-mod-test 
-			 ecc-modinv-test ecc-redc-test 
-		     ecc-sqrt-test 
-		     ecc-dup-test ecc-add-test 
-		     ecc-mul-g-test ecc-mul-a-test 
-		     ecdsa-sign-test ecdsa-verify-test 
-		     ecdsa-keygen-test ecdh-test 
-		     eddsa-compress-test eddsa-sign-test 
-		     eddsa-verify-test ed25519-test)
-			 
+set(TS_HOGWEED 
+    sexp-test sexp-format-test 
+    rsa2sexp-test sexp2rsa-test 
+    bignum-test random-prime-test 
+    pkcs1-test pss-test rsa-sign-tr-test 
+    rsa-pss-sign-tr-test 
+    rsa-test rsa-encrypt-test rsa-keygen-test 
+    dsa-test dsa-keygen-test 
+    curve25519-dh-test 
+    #ecc-mod-test 
+	ecc-modinv-test ecc-redc-test 
+    ecc-sqrt-test 
+    ecc-dup-test ecc-add-test 
+    ecc-mul-g-test ecc-mul-a-test 
+    ecdsa-sign-test ecdsa-verify-test 
+    ecdsa-keygen-test ecdh-test 
+    eddsa-compress-test eddsa-sign-test 
+    eddsa-verify-test ed25519-test)
+
 macro(make_test suite name)
    set(target_ ${suite}-${name})
    add_executable(${target_} ${NETTLE_PROJECT_DIR}/testsuite/${name}.c 

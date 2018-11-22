@@ -23,10 +23,12 @@ class NettleConan(ConanFile):
     def configure(self):
         # Because this is pure C
         del self.settings.compiler.libcxx
-
+        if self.settings.compiler == "Visual Studio":
+            del self.options.fPIC
+            if self.options.shared:
+               raise tools.ConanException("The nettle package cannot be built shared on Visual Studio.")
+        
         config_scheme(self)
-
-
 
     def source(self):
         source_url = "https://ftp.gnu.org/gnu/nettle"
@@ -59,14 +61,15 @@ class NettleConan(ConanFile):
             env_build.make()
 
     def cmake_build(self):
+        NETTLE_PROJECT_DIR = os.path.abspath(self.source_subfolder).replace('\\','/')
         cmake = CMake(self)
         cmake.configure(build_folder='~build',
         defs={'USE_CONAN_IO':True,
-            'NETTLE_PROJECT_DIR':self.source_subfolder,            
-            'ENABLE_UNIT_TESTS':'ON'
+            'NETTLE_PROJECT_DIR':NETTLE_PROJECT_DIR,            
+            'ENABLE_UNIT_TESTS':'ON' if os.environ.get('CONANOS_BUILD_TESTS') else 'OFF'
         })
         cmake.build()
-        cmake.test()
+        #cmake.test()
         cmake.install()
 
     def build(self):
