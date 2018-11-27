@@ -20,7 +20,7 @@ class NettleConan(ConanFile):
     default_options = "shared=False"
     requires = 'gmp/6.1.2@conanos/stable'
 
-    #source_subfolder = '%s-%s'%(name,version)
+    #_source_folder = '%s-%s'%(name,version)
     generators = 'cmake'
     
     _source_folder    ='_source'
@@ -57,7 +57,7 @@ class NettleConan(ConanFile):
        
     def autotool_build(self):
 
-        with tools.chdir(self.source_subfolder):
+        with tools.chdir(self._source_folder):
             env_build = AutoToolsBuildEnvironment(self)
             env_build.fpic = True
 
@@ -81,7 +81,7 @@ class NettleConan(ConanFile):
             env_build.install()
 
     def cmake_build(self):
-        NETTLE_PROJECT_DIR = os.path.abspath(self.source_subfolder).replace('\\','/')
+        NETTLE_PROJECT_DIR = os.path.abspath(self._source_folder).replace('\\','/')
         cmake = CMake(self)
         cmake.configure(build_folder='~build',
         defs={'USE_CONAN_IO':True,
