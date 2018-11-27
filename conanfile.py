@@ -20,6 +20,17 @@ class NettleConan(ConanFile):
     source_subfolder = '%s-%s'%(name,version)
     generators = 'cmake'
 
+    @property
+    def is_msvc(self):
+        return self.settings.compiler == "Visual Studio"
+
+    @property
+    def run_checks(self):
+        CONANOS_RUN_CHECKS = os.environ.get('CONANOS_RUN_CHECKS')
+        if CONANOS_RUN_CHECKS:
+            return self.name in CONANOS_RUN_CHECKS.split()
+        return False
+		
     def configure(self):
         # Because this is pure C
         del self.settings.compiler.libcxx
@@ -28,6 +39,7 @@ class NettleConan(ConanFile):
             if self.options.shared:
                raise tools.ConanException("The nettle package cannot be built shared on Visual Studio.")
         
+    def requirements(self):
         config_scheme(self)
 
     def source(self):
@@ -59,6 +71,7 @@ class NettleConan(ConanFile):
 
             env_build.configure(args=config_args)
             env_build.make()
+            env_build.install()
 
     def cmake_build(self):
         NETTLE_PROJECT_DIR = os.path.abspath(self.source_subfolder).replace('\\','/')
@@ -66,21 +79,23 @@ class NettleConan(ConanFile):
         cmake.configure(build_folder='~build',
         defs={'USE_CONAN_IO':True,
             'NETTLE_PROJECT_DIR':NETTLE_PROJECT_DIR,            
-            'ENABLE_UNIT_TESTS':'ON' if os.environ.get('CONANOS_BUILD_TESTS') else 'OFF'
+            'ENABLE_UNIT_TESTS':self.run_checks
         })
         cmake.build()
-        #cmake.test()
+        if self.run_checks:
+            cmake.test()
         cmake.install()
 
     def build(self):
-        if self.settings.compiler == 'Visual Studio':
+        if self.is_msvc:
             self.cmake_build()
         else:
             self.autotool_build()
     def package(self):
+        return
         self.copy(pattern="COPYING*", src="sources")
         self.copy(pattern="*.h", dst="include/nettle", src="sources")
-        # self.copy(pattern="*.dll", dst="bin", src="bin", keep_path=False)
+        self.copy(pattern="*.dll", dst="bin", src="bin", keep_path=False)
         self.copy(pattern="*.lib", dst="lib", src="sources", keep_path=False)
         self.copy(pattern="*.a", dst="lib", src="sources", keep_path=False)
         self.copy(pattern="*.so*", dst="lib", src="sources", keep_path=False)
