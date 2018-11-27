@@ -17,8 +17,12 @@ class NettleConan(ConanFile):
     default_options = "shared=False"
     requires = 'gmp/6.1.2@conanos/stable'
 
-    source_subfolder = '%s-%s'%(name,version)
+    #source_subfolder = '%s-%s'%(name,version)
     generators = 'cmake'
+    
+    _source_folder    ='_source'
+    _pkgconfig_folder ='_pkgconfig'
+    _build_folder     ='_build'
 
     @property
     def is_msvc(self):
@@ -45,8 +49,8 @@ class NettleConan(ConanFile):
     def source(self):
         source_url = "https://ftp.gnu.org/gnu/nettle"
         tools.get("{0}/nettle-{1}.tar.gz".format(source_url, self.version))
-        #extracted_dir = self.name + "-" + self.version
-        #os.rename(extracted_dir, "sources")
+        extracted_dir = self.name + "-" + self.version
+        os.rename(extracted_dir, self._source_folder)
        
     def autotool_build(self):
 
@@ -87,6 +91,8 @@ class NettleConan(ConanFile):
         cmake.install()
 
     def build(self):
+        pkgconfig_adaption(self,_abspath(self._source_folder))
+        
         if self.is_msvc:
             self.cmake_build()
         else:
