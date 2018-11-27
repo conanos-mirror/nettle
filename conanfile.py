@@ -5,6 +5,9 @@ from conans import ConanFile, AutoToolsBuildEnvironment, tools,CMake
 import os
 from conanos.build import config_scheme,pkgconfig_adaption
 
+def _abspath(folder):
+    return os.path.abspath(folder).replace('\\','/')
+
 class NettleConan(ConanFile):
     name = "nettle"
     version = "3.4"
