@@ -3,7 +3,7 @@
 
 from conans import ConanFile, AutoToolsBuildEnvironment, tools,CMake
 import os
-from conanos.build import config_scheme
+from conanos.build import config_scheme,pkgconfig_adaption
 
 class NettleConan(ConanFile):
     name = "nettle"
