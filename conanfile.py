@@ -59,34 +59,49 @@ class NettleConan(ConanFile):
 
         with tools.chdir(self._source_folder):
             env_build = AutoToolsBuildEnvironment(self)
-            env_build.fpic = True
+            #env_build.fpic = True
 
-            config_args = []
-            for option_name in self.options.values.fields:
-                if(option_name == "shared"):
-                    if(getattr(self.options, "shared")):
-                        config_args.append("--enable-shared")
-                        config_args.append("--disable-static")
-                    else:
-                        config_args.append("--enable-static")
-                        config_args.append("--disable-shared")
-                else:
-                    activated = getattr(self.options, option_name)
-                    if activated:
-                        self.output.info("Activated option! %s" % option_name)
-                        config_args.append("--%s" % option_name)
-
-            env_build.configure(args=config_args)
+            _args=["--enable-public-key"]            
+            if self.options.shared:
+                _args.extend(['--enable-shared=yes','--enable-static=no'])
+            else:
+                _args.extend(['--enable-shared=no','--enable-static=yes'])
+            env_build.configure(args=_args,pkg_config_paths=_abspath(self._pkgconfig_folder))
             env_build.make()
             env_build.install()
 
+    def gcc_build(self):
+        with tools.chdir(self.source_subfolder):
+            with tools.environment_append({
+                #'PKG_CONFIG_PATH':'%s/lib/pkgconfig'%(self.deps_cpp_info["gmp"].rootpath),
+                #'LD_LIBRARY_PATH' : "%s/lib"%(self.deps_cpp_info["gmp"].rootpath),
+                'LIBRARY_PATH' : "%s/lib"%(self.deps_cpp_info["gmp"].rootpath),       #For generation of libhogweed
+                'C_INCLUDE_PATH' : "%s/include"%(self.deps_cpp_info["gmp"].rootpath)  #For generation of libhogweed
+                }):
+                
+                _args = ["--prefix=%s/builddir"%(os.getcwd()), '--libdir=%s/builddir/lib'%(os.getcwd()) ,
+                         "--enable-public-key"]
+
+                if self.options.shared:
+                    _args.extend(['--enable-shared=yes','--enable-static=no'])
+                else:
+                    _args.extend(['--enable-shared=no','--enable-static=yes'])
+                
+                self.run('./configure %s'%(' '.join(_args)))#space
+                self.run('make')
+                self.run('make install')
+
     def cmake_build(self):
-        NETTLE_PROJECT_DIR = os.path.abspath(self._source_folder).replace('\\','/')
+        #NETTLE_PROJECT_DIR = _abspath(self._source_folder)
         cmake = CMake(self)
-        cmake.configure(build_folder='~build',
+        cmake.configure(build_folder=self._build_folder,
         defs={'USE_CONAN_IO':True,
-            'NETTLE_PROJECT_DIR':NETTLE_PROJECT_DIR,            
-            'ENABLE_UNIT_TESTS':self.run_checks
+            'PROJECT_HOME_DIR':_abspath(self._source_folder),
+            'ENABLE_TESTS':self.run_checks,           
+
+            'ENABLE_UNIT_TESTS':self.run_checks,
+            'NETTLE_PROJECT_DIR':_abspath(self._source_folder),
+
         })
         cmake.build()
         if self.run_checks:
@@ -94,7 +109,7 @@ class NettleConan(ConanFile):
         cmake.install()
 
     def build(self):
-        pkgconfig_adaption(self,_abspath(self._source_folder))
+        pkgconfig_adaption(self,_abspath(self._pkgconfig_folder))
         
         if self.is_msvc:
             self.cmake_build()
