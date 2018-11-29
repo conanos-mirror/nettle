@@ -99,8 +99,8 @@ class NettleConan(ConanFile):
             'PROJECT_HOME_DIR':_abspath(self._source_folder),
             'ENABLE_TESTS':self.run_checks,           
 
-            'ENABLE_UNIT_TESTS':self.run_checks,
-            'NETTLE_PROJECT_DIR':_abspath(self._source_folder),
+            #'ENABLE_UNIT_TESTS':self.run_checks,
+            #'NETTLE_PROJECT_DIR':_abspath(self._source_folder),
 
         })
         cmake.build()

@@ -5,7 +5,7 @@ set (MINOR_VERSION 4)
 set (VERSION_PATCH 0)
 set (VERSION 3.4)
 
-OPTION(ENABLE_UNIT_TESTS "enable test ..." ON)
+OPTION(ENABLE_TESTS "enable test build and check ..." ON)
 #
 # Use Conan.io
 #
@@ -16,8 +16,8 @@ if(USE_CONAN_IO)
 endif()
 
 
-if(NOT NETTLE_PROJECT_DIR)
-  set(NETTLE_PROJECT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/nettle-${VERSION})
+if(NOT PROJECT_HOME_DIR)
+  set(PROJECT_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR}/nettle-${VERSION})
 endif()
 
 include(cmake/utils.cmake)
@@ -54,12 +54,12 @@ endif()
 
 
 
-if(NETTLE_PROJECT_DIR)
-   include_directories(${NETTLE_PROJECT_DIR}/include)
-   link_directories(${NETTLE_PROJECT_DIR}/lib)
+if(PROJECT_HOME_DIR)
+   include_directories(${PROJECT_HOME_DIR}/include)
+   link_directories(${PROJECT_HOME_DIR}/lib)
 endif()
 
-include_directories(${NETTLE_PROJECT_DIR}
+include_directories(${PROJECT_HOME_DIR}
                     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc
 					${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/${__arch__}                    
                     ${CMAKE_CURRENT_BINARY_DIR}
@@ -73,15 +73,15 @@ include_directories(${NETTLE_PROJECT_DIR}
 #endif()
 #message("-------------------------------------------------------")
 #message("${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/ecc-curve.h.in")
-#message("${NETTLE_PROJECT_DIR}/ecc-curve.h")
+#message("${PROJECT_HOME_DIR}/ecc-curve.h")
 #message("-------------------------------------------------------")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/config.h.cmakein
                ${CMAKE_CURRENT_BINARY_DIR}/config.h @ONLY)
 
 #configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/ecc-curve.h.in
-#               ${NETTLE_PROJECT_DIR}/ecc-curve.h @ONLY)
+#               ${PROJECT_HOME_DIR}/ecc-curve.h @ONLY)
 #configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/nettle-meta.h.in
-#               ${NETTLE_PROJECT_DIR}/nettle-meta.h @ONLY)
+#               ${PROJECT_HOME_DIR}/nettle-meta.h @ONLY)
 
 set(HEADERS_ aes.h arcfour.h arctwo.h asn1.h blowfish.h 
 	  base16.h base64.h bignum.h buffer.h camellia.h cast128.h 
@@ -102,7 +102,7 @@ set(HEADERS_ aes.h arcfour.h arctwo.h asn1.h blowfish.h
 	  umac.h yarrow.h poly1305.h)
 
 foreach(name ${HEADERS_})
-	  set(HEADERS ${HEADERS} ${NETTLE_PROJECT_DIR}/${name})
+	  set(HEADERS ${HEADERS} ${PROJECT_HOME_DIR}/${name})
 endforeach()
 
 set(INSTALL_HEADERS  ${HEADERS} 
@@ -233,7 +233,7 @@ set(hogweed_SOURCES  sexp.c sexp-format.c
 
 set(full_nettle_sources)
 foreach(name ${nettle_SOURCES})
-  set(full_nettle_sources ${full_nettle_sources} ${NETTLE_PROJECT_DIR}/${name})
+  set(full_nettle_sources ${full_nettle_sources} ${PROJECT_HOME_DIR}/${name})
 endforeach()
 add_library(nettle  STATIC ${full_nettle_sources})# ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/libnettle.def)
 target_compile_definitions(nettle PRIVATE LIBNETTLE_BUILDING)
@@ -244,7 +244,7 @@ assign_source_group(${full_nettle_sources})
 
 set(full_hogweed_sources)
 foreach(name ${hogweed_SOURCES})
-  set(full_hogweed_sources ${full_hogweed_sources} ${NETTLE_PROJECT_DIR}/${name})
+  set(full_hogweed_sources ${full_hogweed_sources} ${PROJECT_HOME_DIR}/${name})
 endforeach()
 add_library(hogweed STATIC ${full_hogweed_sources})# ${CMAKE_CURRENT_SOURCE_DIR}/cmake/msvc/libhogweed.def)
 target_compile_definitions(hogweed PRIVATE LIBHOGWEED_BUILDING)
@@ -260,7 +260,7 @@ INSTALL(TARGETS nettle hogweed
        LIBRARY DESTINATION lib
 	   ARCHIVE DESTINATION lib )
 
-if(ENABLE_UNIT_TESTS )
+if(ENABLE_TESTS )
 enable_testing()
 
 set(TS_NETTLE
@@ -310,9 +310,9 @@ set(TS_HOGWEED
 
 macro(make_test suite name)
    set(target_ ${suite}-${name})
-   add_executable(${target_} ${NETTLE_PROJECT_DIR}/testsuite/${name}.c 
-				  ${NETTLE_PROJECT_DIR}/testsuite/testutils.c 
-				  ${NETTLE_PROJECT_DIR}/nettle-internal.c)
+   add_executable(${target_} ${PROJECT_HOME_DIR}/testsuite/${name}.c 
+				  ${PROJECT_HOME_DIR}/testsuite/testutils.c 
+				  ${PROJECT_HOME_DIR}/nettle-internal.c)
    target_link_libraries(${target_} nettle hogweed gmp)
    add_test(${target_} ${target_})
 endmacro()
