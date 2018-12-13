@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from conans import ConanFile, AutoToolsBuildEnvironment, tools,MSBuild
-import os
+import os, shutil
 from conanos.build import config_scheme
 
 class NettleConan(ConanFile):
@@ -122,6 +122,26 @@ class NettleConan(ConanFile):
             for i in ["lib","bin"]:
                 self.copy("*", dst=os.path.join(self.package_folder,i), src=os.path.join(self.build_folder,"..","msvc",i,rplatform))
             self.copy("*", dst=os.path.join(self.package_folder,"licenses"), src=os.path.join(self.build_folder,"..", "msvc","licenses"))
+
+            tools.mkdir(os.path.join(self.package_folder,"lib","pkgconfig"))
+            for pc in ["nettle", "hogweed"]:
+                shutil.copyfile(os.path.join(self.build_folder,self._source_subfolder, pc + ".pc.in"),
+                                os.path.join(self.package_folder,"lib","pkgconfig", pc + ".pc"))
+                replacements = {
+                    "@prefix@"      : self.package_folder,
+                    "@exec_prefix@" : "${prefix}/bin",
+                    "@libdir@"      : "${prefix}/lib",
+                    "@includedir@"  : "${prefix}/include",
+                    "@PACKAGE_VERSION@" : self.version
+                }
+                if pc == "hogweed":
+                    replacements.update({
+                        "@IF_NOT_SHARED@" : "",
+                        "@IF_SHARED@" : "",
+                        "@LIBS@" : ""
+                    })
+                for s, r in replacements.items():
+                    tools.replace_in_file(os.path.join(self.package_folder,"lib","pkgconfig", pc +".pc"),s,r)
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
