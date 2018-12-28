@@ -140,6 +140,14 @@ class NettleConan(ConanFile):
                         "@IF_SHARED@" : "",
                         "@LIBS@" : ""
                     })
+                    if self.options.shared:
+                        replacements.update({
+                            "-lhogweed" : "-lhogweedd"
+                        })
+                if pc == "nettle" and self.options.shared:
+                    replacements.update({
+                        "-lnettle" : "-lnettled"
+                    })
                 for s, r in replacements.items():
                     tools.replace_in_file(os.path.join(self.package_folder,"lib","pkgconfig", pc +".pc"),s,r)
 
